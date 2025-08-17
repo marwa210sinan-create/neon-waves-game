@@ -1,4 +1,4 @@
-// Neon Waves — Touch, Mouse, Keyboard Controls
+// Neon Waves — Touch, Mouse, Keyboard Controls (Swipe Control)
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d', { alpha: false });
 
@@ -35,12 +35,10 @@ function playTone(freq=440, dur=0.08, type='sine', gain=0.06){
 }
 
 // Background music & score sound
-// Background music
 const BG_MUSIC = new Audio("OhLaLa.m4a");
 BG_MUSIC.loop = true;
 BG_MUSIC.volume = 0.6;
 
-// Score sound
 const SCORE_SOUND = new Audio("score.wav");
 SCORE_SOUND.volume = 0.9;
 
@@ -61,29 +59,63 @@ const state = {
 
 let startTime = performance.now();
 
-// Input Handling
-function setDirFromY(y){
-    const half = window.innerHeight/2;
-    if(y < half) { state.touchDir=-1; statusBox.textContent='صعود هادئ'; playTone(880,0.04,'triangle',0.03);}
-    else { state.touchDir=1; statusBox.textContent='نزول هادئ'; playTone(520,0.04,'triangle',0.03);}
-    state.running=true;
-    centerTip.style.display='none';
+// 🟢 Swipe Touch Control
+let touchStartY = null;
+
+function handleTouchStart(e){
+    touchStartY = e.touches[0].clientY;
+    state.running = true;
+    centerTip.style.display = 'none';
     ensureAC();
 }
-function stopDir(){ state.touchDir=0; statusBox.textContent='توقّف'; }
 
-canvas.addEventListener('touchstart', e=>{ e.preventDefault(); setDirFromY(e.touches[0].clientY); }, {passive:false});
-canvas.addEventListener('touchmove', e=>{ e.preventDefault(); setDirFromY(e.touches[0].clientY); }, {passive:false});
-canvas.addEventListener('touchend', e=>{ e.preventDefault(); stopDir(); }, {passive:false});
-canvas.addEventListener('mousedown', e=>{ setDirFromY(e.clientY); });
-canvas.addEventListener('mousemove', e=>{ if(e.buttons) setDirFromY(e.clientY); });
-window.addEventListener('mouseup', stopDir);
+function handleTouchMove(e){
+    if (touchStartY === null) return;
+    const currentY = e.touches[0].clientY;
+    const deltaY = currentY - touchStartY;
+
+    if (deltaY < -10) {
+        state.touchDir = -1;
+        statusBox.textContent = 'صعود';
+        playTone(880,0.04,'triangle',0.03);
+    } else if (deltaY > 10) {
+        state.touchDir = 1;
+        statusBox.textContent = 'نزول';
+        playTone(520,0.04,'triangle',0.03);
+    } else {
+        state.touchDir = 0;
+        statusBox.textContent = 'استقرار';
+    }
+}
+
+function handleTouchEnd(e){
+    state.touchDir = 0;
+    statusBox.textContent = 'توقف';
+    touchStartY = null;
+}
+
+canvas.addEventListener('touchstart', handleTouchStart, {passive:false});
+canvas.addEventListener('touchmove', handleTouchMove, {passive:false});
+canvas.addEventListener('touchend', handleTouchEnd, {passive:false});
+
+// 🖱️ Mouse Control
+canvas.addEventListener('mousedown', e=>{ touchStartY = e.clientY; state.running=true; ensureAC(); centerTip.style.display='none'; });
+canvas.addEventListener('mousemove', e=>{
+    if(touchStartY === null || !e.buttons) return;
+    const deltaY = e.clientY - touchStartY;
+    if(deltaY < -10){ state.touchDir=-1; statusBox.textContent='صعود'; }
+    else if(deltaY > 10){ state.touchDir=1; statusBox.textContent='نزول'; }
+    else { state.touchDir=0; statusBox.textContent='استقرار'; }
+});
+window.addEventListener('mouseup', ()=>{ state.touchDir=0; statusBox.textContent='توقف'; touchStartY=null; });
+
+// ⌨️ Keyboard Control
 window.addEventListener('keydown', e=>{
     if(e.key==='ArrowUp'){ state.touchDir=-1; state.running=true; ensureAC(); playTone(880,0.04,'triangle',0.03); centerTip.style.display='none'; }
     if(e.key==='ArrowDown'){ state.touchDir=1; state.running=true; ensureAC(); playTone(520,0.04,'triangle',0.03); centerTip.style.display='none'; }
     if(e.key===' '){ if(!state.running){ resetGame(); } }
 });
-window.addEventListener('keyup', e=>{ if(e.key==='ArrowUp' || e.key==='ArrowDown') stopDir(); });
+window.addEventListener('keyup', e=>{ if(e.key==='ArrowUp' || e.key==='ArrowDown'){ state.touchDir=0; statusBox.textContent='توقف'; } });
 
 // Obstacles
 function rand(a,b){ return a + Math.random()*(b-a); }
@@ -101,7 +133,7 @@ function drawGrid(t){ const W=window.innerWidth,H=window.innerHeight; const g=ct
 function glowCircle(cx,cy,r,color){ ctx.save(); ctx.globalCompositeOperation='lighter'; const g=ctx.createRadialGradient(cx,cy,2,cx,cy,r*2.2); g.addColorStop(0,color+'66'); g.addColorStop(1,color+'00'); ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,cy,r*2.4,0,Math.PI*2); ctx.fill(); ctx.restore(); ctx.fillStyle=color; ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fill();}
 function glowRect(x,y,w,h,color){ ctx.save(); ctx.globalCompositeOperation='lighter'; const g=ctx.createRadialGradient(x+w/2,y+h/2,4,x+w/2,y+h/2,Math.max(w,h)); g.addColorStop(0,color+'66'); g.addColorStop(1,color+'00'); ctx.fillStyle=g; ctx.fillRect(x-24,y-24,w+48,h+48); ctx.restore(); ctx.fillStyle=color; roundRect(x,y,w,h,8);}
 function roundRect(x,y,w,h,r){ const rr=Math.min(r,w/2,h/2); ctx.beginPath(); ctx.moveTo(x+rr,y); ctx.arcTo(x+w,y,x+w,y+h,rr); ctx.arcTo(x+w,y+h,x,y+h,rr); ctx.arcTo(x,y+h,x,y,rr); ctx.arcTo(x,y,x+w,y,rr); ctx.closePath(); ctx.fill();}
-function rects(a,b){ return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;}
+function rects(a,b){ return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y; }
 
 // Reset Game
 function resetGame(){
