@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Neon Waves — Touch PWA</title>
+  <meta name="description" content="لعبة نيّون تعمل باللمس فقط — من تصميم Marwa Sinan">
+  <meta name="theme-color" content="#6c5ce7">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{height:100%;margin:0;background:#0a0b16;color:#e9ecff;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,'Tajawal','Cairo',Arial}
+    canvas{display:block;position:fixed;inset:0;width:100vw;height:100vh}
+    .hud{position:fixed;inset:0;pointer-events:none;padding:10px;display:flex;flex-direction:column}
+    .row{display:flex;gap:8px;align-items:center}
+    .top{justify-content:space-between}
+    .pill{pointer-events:none;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:6px 12px;font-weight:700;backdrop-filter:blur(4px)}
+    .rights{position:fixed;left:10px;bottom:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:6px 10px;font-size:12px}
+    .centerTip{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center;max-width:90vw;color:#b9c0ff;pointer-events:none}
+    .title{font-size:28px;font-weight:800;color:#fff;margin-bottom:6px;text-shadow:0 0 18px #7d5fff}
+  </style>
+</head>
+<body>
+  <canvas id="game"></canvas>
+  <div class="hud">
+    <div class="row top">
+      <div class="row">
+        <div class="pill" id="scoreBox">النتيجة: 0</div>
+        <div class="pill" id="bestBox">الأفضل: 0</div>
+        <div class="pill" id="statusBox">إلمسي أعلى الشاشة للصعود – أسفلها للنزول</div>
+      </div>
+      <div class="pill">Neon Waves — Touch</div>
+    </div>
+  </div>
+  <div class="centerTip" id="centerTip">
+    <div class="title">NEON WAVES</div>
+    <div>التحكم باللمس فقط: الجزء العلوي ⬆️ يصعد، والجزء السفلي ⬇️ ينزل.<br>إرفعي إصبعك للتوقف. اضغطي لبدء اللعب.</div>
+  </div>
+  <div class="rights">Eng Marwa Sinan — جميع الحقوق محفوظة</div>
+
+  <script src="game.js"></script>
+  <script>
+    if('serviceWorker' in navigator){
+      navigator.serviceWorker.register('service-worker.js').catch(console.warn);
+    }
+  </script>
+</body>
+</html>
